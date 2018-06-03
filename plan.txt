@@ -14,3 +14,5 @@
 
 
 Абстракции
+https://tech.yandex.ru/maps/jsbox/2.1/clusterer_create
+https://tech.yandex.ru/maps/doc/jsapi/2.1/dg/concepts/map-docpage/
