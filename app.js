@@ -18,46 +18,39 @@ function init () {
         var position = e.get('position');
 
         baseInformation(coords, position)
+        clusterer.balloon.close() 
+    });  
 
-        // myMap.balloon.open(coords, {
-        //     contentHeader:'Событие!',
-        //     contentBody:'<p>Кто-то щелкнул по карте.</p>' +
-        //         '<p>Координаты щелчка: ' + [
-        //         coords[0].toPrecision(6),
-        //         coords[1].toPrecision(6)
-        //         ].join(', ') + '</p>',
-        //     contentFooter:'<sup>Щелкните еще раз</sup>'
-        // });
-
-        // myPlacemark = createPlacemark(coords);
-        // myMap.geoObjects.add(myPlacemark);
-        // // Слушаем событие окончания перетаскивания на метке.
-        // myPlacemark.events.add('dragend', function () {
-        //     getAddress(myPlacemark.geometry.getCoordinates());
-        // });
-        
-        // getAddress(coords);
+    var customItemContentLayout = ymaps.templateLayoutFactory.createClass(
+        // Флаг "raw" означает, что данные вставляют "как есть" без экранирования html.
+        '<h2 class=ballon_header>{{ properties.balloonContentHeader|raw }}</h2>' +
+            '<div class=ballon_body>{{ properties.balloonContentBody|raw }}</div>' +
+            '<div class=ballon_footer>{{ properties.balloonContentFooter|raw }}</div>'
+    );
+    
+    clusterer = new ymaps.Clusterer({
+        preset: 'islands#invertedVioletClusterIcons',
+        clusterDisableClickZoom: true,
+        openBalloonOnClick: true,
+        clusterBalloonContentLayout: 'cluster#balloonCarousel', 
+        clusterBalloonItemContentLayout: customItemContentLayout
     });
 
-    // Создание метки.
-    function createPlacemark(coords) {
-        return new ymaps.Placemark(coords, {
-            iconCaption: 'поиск...'
-        }, {
-            preset: 'islands#violetDotIconWithCaption',
-            draggable: true
-        });
-    }
+    
 }
 
 let information = {}
 
+
+//наполнение массива информацией
 function baseInformation(coords, position) {
     geocode(coords)
     information[`${coords[0]}-${coords[1]}`] = {}
     information[`${coords[0]}-${coords[1]}`].position = position;    
 } 
 
+
+//получение адресы
 function geocode(coords) {
     ymaps.geocode(coords).then(res => {
         var firstGeoObject = res.geoObjects.get(0);
@@ -66,6 +59,8 @@ function geocode(coords) {
     })
 }
 
+
+//создание основного блока
 function creatBallon(coords) {
 
     const wrapper = document.querySelector('.review-elem');
@@ -110,19 +105,22 @@ function creatBallon(coords) {
     </div>`;
     
     onButtonChange(coords);
-               
+    updateReview(coords);               
 }
 
+
+//обработка блока с отзывами
 function updateReview(coords) {
     var reviewBodyElem = document.querySelector('.review-body');
     var item = information[`${coords[0]}-${coords[1]}`];
+    
 
     reviewBodyElem.innerHTML = '';
 
-    for(let review of item.review ){
+    for(let review of item.reviews ){
         var elem = document.createElement('div');
         elem.classList.add('.review-item');
-        var item = `<p><span class="review-item_name"><b>${review.name}</b></span><span class="review-item_place">${review.place}</span><span class="review-item_date">10.10</span></p>
+        var item = `<p><span class="review-item_name"><b>${review.name}</b></span><span class="review-item_place">${review.place}</span><span class="review-item_date">${review.date}</span></p>
                         <p class="review-item_review">${review.comment}</p>
                     `;
         elem.innerHTML = item;
@@ -130,6 +128,8 @@ function updateReview(coords) {
     }
 }
 
+
+//обработка кнопки Добавить
 function onButtonChange(coords){
     var reviewElem = document.querySelector('.review-elem');
     var buttonAdd = document.querySelector('.review-footer button');
@@ -137,24 +137,78 @@ function onButtonChange(coords){
     var nameElem = document.querySelector('.review_name');
     var placeElem = document.querySelector('.review_place');
     var commentElem = document.querySelector('.review_comment');
-    var arr = [];
+    var item = information[`${coords[0]}-${coords[1]}`];
+    var date = new Date().toLocaleString();
+    var arr = item.reviews || [];
 
     buttonAdd.addEventListener('click', function(){
 
-        var item = information[`${coords[0]}-${coords[1]}`];
-        var reviews = {}
         
-        reviews.name = nameElem.value;
-        reviews.place = placeElem.value;
-        reviews.comment = commentElem.value;
-        arr.push(reviews);
+        var review = {}
+        
+        review.name = nameElem.value;
+        review.place = placeElem.value;
+        review.comment = commentElem.value;
+        review.date = date;
+        arr.push(review);
 
-        item.review = arr;
+        item.reviews = arr;
 
         updateReview(coords);
+        createPlacemark(coords)
+
+        nameElem.value = '';
+        placeElem.value = '';
+        commentElem.value = '';
     })
 
     buttonClose.addEventListener('click', function(){
         reviewElem.innerHTML = '';
     })
 }
+
+// Создание метки.
+function createPlacemark(coords) {
+    var item = information[`${coords[0]}-${coords[1]}`];    
+    var dataCoords = `${coords[0]}-${coords[1]}`
+    
+    var placeMarkData = {
+        balloonContentHeader: `${item.reviews[0].name}`,        
+        balloonContentBody:  `<a href="#" class="clusters-link" data-coords="${dataCoords}">${item.address}</a>${item.reviews[0].comment}`,
+        balloonContentFooter: `${item.reviews[0].date}`
+    }
+
+    
+
+    var options = {
+        openBalloonOnClick: false
+    }
+
+    var myPlacemark = new ymaps.Placemark(coords, placeMarkData, options);
+
+    myMap.geoObjects.add(myPlacemark);
+    myPlacemark.events.add('click', function(){
+        creatBallon(coords)
+    });
+
+    createCluster(myPlacemark)
+}
+
+function createCluster(placemarks) {  
+
+    clusterer.add(placemarks);
+    myMap.geoObjects.add(clusterer);
+}
+
+
+document.addEventListener('click', (e) => {
+    e.preventDefault()
+    if(e.target.className == 'clusters-link') {
+
+        var coords = e.target.dataset.coords.split('-');
+        
+        clusterer.balloon.close()        
+        creatBallon(coords)
+    }
+    
+})
