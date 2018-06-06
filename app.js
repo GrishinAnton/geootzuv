@@ -50,7 +50,7 @@ function baseInformation(coords, position) {
 } 
 
 
-//получение адресы
+//получение адреса
 function geocode(coords) {
     ymaps.geocode(coords).then(res => {
         var firstGeoObject = res.geoObjects.get(0);
@@ -86,7 +86,9 @@ function creatBallon(coords) {
 
         <div class="review-wrapper">
 
-            <div class="review-body"></div>
+            <div class="review-body">
+                <span>Отзывов пока нет</span>
+            </div>
         
             <div class="review-review">
                 <p>Ваш отзыв</p>
@@ -115,22 +117,24 @@ function updateReview(coords) {
     let reviewBodyElem = document.querySelector('.review-body');
     let item = information[`${coords[0]}-${coords[1]}`];
     
+    if (item.reviews){
+       
+        reviewBodyElem.innerHTML = '';
 
-    reviewBodyElem.innerHTML = '';
-
-    for(let review of item.reviews ){
-        let elem = document.createElement('div');
-        elem.classList.add('.review-item');
-        let item = `<p><span class="review-item_name"><b>${review.name}</b></span><span class="review-item_place">${review.place}</span><span class="review-item_date">${review.date}</span></p>
+        for (let review of item.reviews) {
+            let elem = document.createElement('div');
+            elem.classList.add('.review-item');
+            let item = `<p><span class="review-item_name"><b>${review.name}</b></span><span class="review-item_place">${review.place}</span><span class="review-item_date">${review.date}</span></p>
                         <p class="review-item_review">${review.comment}</p>
                     `;
-        elem.innerHTML = item;
-        reviewBodyElem.appendChild(elem);
+            elem.innerHTML = item;
+            reviewBodyElem.appendChild(elem);
+        }
     }
 }
 
 
-//обработка кнопки Добавить
+//Обработка кнопки Добавить
 function onButtonChange(coords){
     let reviewElem = document.querySelector('.review-elem');
     let buttonAdd = document.querySelector('.review-footer button');
@@ -144,6 +148,10 @@ function onButtonChange(coords){
 
     buttonAdd.addEventListener('click', function(){
 
+        if (nameElem.value.length == 0 || placeElem.value.length == 0 || commentElem.value.length == 0){
+           
+            return false
+        }
         
         let review = {};
         
@@ -168,7 +176,7 @@ function onButtonChange(coords){
     });
 }
 
-// Создание метки.
+//Создание метки
 function createPlacemark(coords) {
     let item = information[`${coords[0]}-${coords[1]}`];    
     let dataCoords = `${coords[0]}-${coords[1]}`;
@@ -194,13 +202,14 @@ function createPlacemark(coords) {
     createCluster(myPlacemark);
 }
 
+//Добавление метки в кластер
 function createCluster(placemarks) {  
 
     clusterer.add(placemarks);
     myMap.geoObjects.add(clusterer);
 }
 
-
+//Слушаем клик по адресу в карусели кластера
 document.addEventListener('click', (e) => {
     e.preventDefault();
 
