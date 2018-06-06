@@ -19,6 +19,7 @@ function init () {
 
         baseInformation(coords, position);
         clusterer.balloon.close();
+
     });  
 
     var customItemContentLayout = ymaps.templateLayoutFactory.createClass(
@@ -70,8 +71,6 @@ function creatBallon(coords) {
     wrapper.style.top = item.position[1] + 'px';
     wrapper.style.left = item.position[0] + 'px';
     wrapper.style.zIndex = '1';
-    
-    
     
     wrapper.innerHTML = 
     `
