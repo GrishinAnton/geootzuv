@@ -48,6 +48,7 @@ function baseInformation(coords, position) {
     geocode(coords);
     information[`${coords[0]}-${coords[1]}`] = {};
     information[`${coords[0]}-${coords[1]}`].position = position;    
+
 } 
 
 
@@ -65,11 +66,20 @@ function geocode(coords) {
 function creatBallon(coords) {
 
     let wrapper = document.querySelector('.review-elem');
+    let reviewBlockWidth = 320;
+    let reviewBlockHeigth = 539;
     let item = information[`${coords[0]}-${coords[1]}`];
 
+    let windowHeight = window.innerHeight
+    let windowWidth = window.innerWidth
 
-    wrapper.style.top = item.position[1] + 'px';
-    wrapper.style.left = item.position[0] + 'px';
+    let positionTop = item.position[1] + reviewBlockHeigth > windowHeight ? windowHeight - reviewBlockHeigth : item.position[1] 
+    let positionLeft = item.position[0] + reviewBlockWidth > windowWidth ? windowWidth - reviewBlockWidth : item.position[0]
+
+
+
+    wrapper.style.top = positionTop + 'px';
+    wrapper.style.left = positionLeft + 'px';
     wrapper.style.zIndex = '1';
     
     wrapper.innerHTML = 
